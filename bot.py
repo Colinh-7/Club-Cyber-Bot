@@ -1,4 +1,4 @@
-import os
+import sys
 import discord
 from discord.ext import commands
 
@@ -11,5 +11,4 @@ bot = commands.Bot(command_prefix="!", intents = intents)
 async def bonjour(ctx):
     await ctx.send(f"Bonjour {ctx.author}")
 
-token = os.system("cat TOKEN")
-bot.run(token)
+bot.run(sys.argv[1])
