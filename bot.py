@@ -11,4 +11,7 @@ bot = commands.Bot(command_prefix="!", intents = intents)
 async def bonjour(ctx):
     await ctx.send(f"Bonjour {ctx.author}")
 
+async def prouveur(ctx):
+    await ctx.send(f"Miguel le GOAT.")
+
 bot.run(sys.argv[1])
