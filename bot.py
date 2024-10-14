@@ -11,5 +11,5 @@ bot = commands.Bot(command_prefix="!", intents = intents)
 async def bonjour(ctx):
     await ctx.send(f"Bonjour {ctx.author}")
 
-token = os.environ['TOKEN_BOT_DISCORD']
+token = os.system("cat TOKEN")
 bot.run(token)
