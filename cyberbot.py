@@ -174,7 +174,7 @@ async def add(ctx, username: str):
 
 
 @bot.command()
-async def remove(ctx, username: str):
+async def rm(ctx, username: str):
     users = csv_parsing('club.csv') # Get all users
     if username in users:
         users.remove(username) # Remove users from CSV
@@ -199,11 +199,13 @@ async def stats(ctx, username: str):
 
 @bot.command()
 async def chall(ctx, username: str):
+    msg = ""
     if username is not None and username in bot.user_data:
         chall = bot.user_data[username].get_last_challenges()
-        await ctx.send(f"Challenge(s) réalisé(s) par `{username}` :")
-        for key in chall:
-            await ctx.send(f"   - {key}")
+        msg += f"Challenge(s) réalisé(s) par `{username}` :\n"
+        for str in chall:
+            msg += (f"   - `{str}`.\n")
+        await ctx.send(msg)
     else:
         await ctx.send(f"Aucune donnée pour `{username}`.")
 
