@@ -172,16 +172,6 @@ async def add(ctx, username: str):
         csvwriter.writerow([username])
     await ctx.send(f"L'utilisateur `{username}` a été ajouté au Club Cyber.")
 
-@bot.command()
-async def stats(ctx, username: str):
-    if username is not None and username in bot.user_data:
-        stats = bot.user_data[username].get_stats()
-        await ctx.send(f"Statistiques de `{username}` :")
-        for key in stats:
-            await ctx.send(f"   - {key} : `{stats[key]}`")
-
-    else:
-        await ctx.send(f"Aucune donnée pour `{username}`.")
 
 @bot.command()
 async def remove(ctx, username: str):
@@ -195,6 +185,27 @@ async def remove(ctx, username: str):
         await ctx.send(f"L'utilisateur `{username}` a été enlevé du Club Cyber.")
     else:
         await ctx.send(f"L'utilisateur `{username}` n'existe pas dans le Club Cyber.")
+
+@bot.command()
+async def stats(ctx, username: str):
+    if username is not None and username in bot.user_data:
+        stats = bot.user_data[username].get_stats()
+        await ctx.send(f"Statistiques de `{username}` :")
+        for key in stats:
+            await ctx.send(f"   - {key} : `{stats[key]}`")
+
+    else:
+        await ctx.send(f"Aucune donnée pour `{username}`.")
+
+@bot.command()
+async def chall(ctx, username: str):
+    if username is not None and username in bot.user_data:
+        chall = bot.user_data[username].get_last_challenges()
+        await ctx.send(f"Challenge(s) réalisé(s) par `{username}` :")
+        for key in chall:
+            await ctx.send(f"   - {key}")
+    else:
+        await ctx.send(f"Aucune donnée pour `{username}`.")
 
 # Lancer le bot
 if __name__ == "__main__":
