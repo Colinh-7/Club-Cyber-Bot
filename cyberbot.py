@@ -159,11 +159,12 @@ async def bonjour(ctx):
 
 @bot.command()
 async def club(ctx):
-    guild = ctx.guild
+    msg = ""
     nb_members = len(bot.user_data)
-    await ctx.send(f"Il y a actuellement {nb_members} personne(s) dans le Club Cyber : ")
+    msg += f"Il y a actuellement {nb_members} personne(s) dans le Club Cyber : \n"
     for user in bot.user_data:
-        await ctx.send(f"   - `{user}`")
+        msg += f"   - `{user}`.\n"
+    await ctx.send(msg)
 
 @bot.command()
 async def add(ctx, username: str):
@@ -171,6 +172,7 @@ async def add(ctx, username: str):
         csvwriter = csv.writer(csvfile, delimiter=';')
         csvwriter.writerow([username])
     await ctx.send(f"L'utilisateur `{username}` a été ajouté au Club Cyber.")
+    await bot.reload_rootme()
 
 
 @bot.command()
@@ -183,17 +185,19 @@ async def rm(ctx, username: str):
             for user in users:
                 csvwriter.writerow([user])  # Write all users except user who have been removed
         await ctx.send(f"L'utilisateur `{username}` a été enlevé du Club Cyber.")
+        await bot.reload_rootme()
     else:
         await ctx.send(f"L'utilisateur `{username}` n'existe pas dans le Club Cyber.")
 
 @bot.command()
 async def stats(ctx, username: str):
+    msg = ""
     if username is not None and username in bot.user_data:
         stats = bot.user_data[username].get_stats()
-        await ctx.send(f"Statistiques de `{username}` :")
+        msg += f"Statistiques de `{username}` :\n"
         for key in stats:
-            await ctx.send(f"   - {key} : `{stats[key]}`")
-
+            msg += f"   - {key} : `{stats[key]}`.\n"
+        await ctx.send(msg)
     else:
         await ctx.send(f"Aucune donnée pour `{username}`.")
 
@@ -209,6 +213,6 @@ async def chall(ctx, username: str):
     else:
         await ctx.send(f"Aucune donnée pour `{username}`.")
 
-# Lancer le bot
+# Main
 if __name__ == "__main__":
     bot.run(sys.argv[1])
