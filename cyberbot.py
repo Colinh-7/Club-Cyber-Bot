@@ -1,7 +1,7 @@
-import sys, csv, time
+import sys, csv
 import discord
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime
 from urllib.request import urlopen, HTTPError
 from discord.ext import commands, tasks
 from discord.ext.commands import MissingRequiredArgument, has_role
@@ -16,7 +16,7 @@ ROLE_ADMIN = "Admin"
 # ==============
 
 def split_words(list):
-    # Liste des mois en français
+    # Month of the year in french
     month = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", 
             "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
 
@@ -145,7 +145,7 @@ class CyberBot(commands.Bot):
         user_names = csv_parsing('club.csv')
         for name in user_names:
             self.user_data[name] = User(name)
-            time.sleep(2) # Avoid HTTP Error 429
+            await asyncio.sleep(2) # Avoid HTTP Error 429
 
     @reload_rootme.before_loop
     async def before_reload(self):
@@ -221,7 +221,7 @@ async def chall(ctx, username: str):
     else:
         await ctx.send(f"Aucune donnée pour `{username}`.")
 
-# ====================== Weekly challenge ======================
+# ====================== Weekly challenges ======================
 @bot.command()
 @has_role(ROLE_ADMIN)
 async def weekly(ctx, challenge: str, chall_link: str):
@@ -244,9 +244,9 @@ async def weekly(ctx, challenge: str, chall_link: str):
     await ctx.send(embed=embed)
         
     # Wait for a week (604800 secondes)
-    await asyncio.sleep(10)
+    await asyncio.sleep(604800)
         
-    one_week_later = (datetime.now() + timedelta(weeks=1)).strftime("%Y-%m-%d %H:%M:%S")
+    one_week_later = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
     # Embed challenge end
     embed = discord.Embed(
@@ -289,6 +289,8 @@ async def stats_error(ctx, error):
 async def chall_error(ctx, error):
     if isinstance(error, MissingRequiredArgument):
         await ctx.send("Usage : !chall <UTILISATEUR_ROOT_ME>")
+
+
 # Main
 if __name__ == "__main__":
     bot.run(sys.argv[1])
