@@ -1,11 +1,15 @@
 import sys, csv, time
 import discord
+import asyncio
+from datetime import datetime, timedelta
 from urllib.request import urlopen, HTTPError
 from discord.ext import commands, tasks
+from discord.ext.commands import MissingRequiredArgument, has_role
 from bs4 import BeautifulSoup 
 
 intents = discord.Intents.default()
 intents.message_content = True
+ROLE_ADMIN = "Admin"
 
 # ==============
 # Root Me Scrapper
@@ -127,7 +131,7 @@ class CyberBot(commands.Bot):
         super().__init__(command_prefix="!", intents=intents)
         self.user_data = {}  # Simple dict for user storage
 
-    async def setup_hook(self) -> None:
+    async def setup_hook(self):
         self.reload_rootme.start()
 
     async def on_ready(self):
@@ -135,7 +139,7 @@ class CyberBot(commands.Bot):
         if canal is not None:
             await canal.send(f"Je suis en ligne !", delete_after=5)
         
-    @tasks.loop(minutes=1)
+    @tasks.loop(minutes=10)
     async def reload_rootme(self):
         self.user_data = {}
         user_names = csv_parsing('club.csv')
@@ -148,7 +152,7 @@ class CyberBot(commands.Bot):
         await self.wait_until_ready()
             
 # ================
-# Bot instance
+# Bot Commands
 # ================
 
 bot = CyberBot()
@@ -166,7 +170,9 @@ async def club(ctx):
         msg += f"- `{user}`.\r"
     await ctx.send(msg)
 
+# ====================== Users management ======================
 @bot.command()
+@has_role(ROLE_ADMIN)
 async def add(ctx, username: str):
     with open('club.csv', 'a', newline='') as csvfile:
         csvwriter = csv.writer(csvfile, delimiter=';')
@@ -176,6 +182,7 @@ async def add(ctx, username: str):
 
 
 @bot.command()
+@has_role(ROLE_ADMIN)
 async def rm(ctx, username: str):
     users = csv_parsing('club.csv') # Get all users
     if username in users:
@@ -189,6 +196,7 @@ async def rm(ctx, username: str):
     else:
         await ctx.send(f"L'utilisateur `{username}` n'existe pas dans le Club Cyber.")
 
+# ====================== Users info ======================
 @bot.command()
 async def stats(ctx, username: str):
     msg = ""
@@ -213,6 +221,74 @@ async def chall(ctx, username: str):
     else:
         await ctx.send(f"Aucune donnée pour `{username}`.")
 
+# ====================== Weekly challenge ======================
+@bot.command()
+@has_role(ROLE_ADMIN)
+async def weekly(ctx, challenge: str, chall_link: str):
+    
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+    # Embed for adding
+    embed = discord.Embed(
+        title="Weekly Challenge ajouté !",
+        description=f"Un nouveau défi a été ajouté : **{challenge}**",
+        color=discord.Color.green()
+    )
+        
+    embed.add_field(name="Défi", value=challenge, inline=False)
+    embed.add_field(name="Lien du défi", value=f"[Cliquez ici pour accéder au défi]({chall_link})", inline=False)
+    embed.add_field(name="Date d'ajout", value=current_time, inline=False)
+    embed.set_footer(text="Club Cyber Bot - Weekly Challenges")
+    embed.set_image(url="https://wiki.elvis.science/images/e/ee/RootMe.png")
+        
+    await ctx.send(embed=embed)
+        
+    # Wait for a week (604800 secondes)
+    await asyncio.sleep(10)
+        
+    one_week_later = (datetime.now() + timedelta(weeks=1)).strftime("%Y-%m-%d %H:%M:%S")
+        
+    # Embed challenge end
+    embed = discord.Embed(
+        title="Weekly Challenge terminé !",
+        description=f"Une semaine s'est écoulée depuis le défi '{challenge}'",
+        color=discord.Color.red()
+    )
+        
+    embed.add_field(name="Défi", value=challenge, inline=True)
+    embed.add_field(name="Lien du défi", value=f"[Cliquez ici pour accéder au défi]({chall_link})", inline=False)
+    embed.add_field(name="Défi lancé le", value=current_time, inline=True)
+    embed.add_field(name="Date actuelle", value=one_week_later, inline=True)
+    embed.set_footer(text="Club Cyber Bot - Weekly Challenges")
+    embed.set_image(url="https://wiki.elvis.science/images/e/ee/RootMe.png")
+        
+    await ctx.send(embed=embed)
+        
+# ====================== Errors handling ======================
+@weekly.error
+async def weekly_error(ctx, error):
+    if isinstance(error, MissingRequiredArgument):
+        await ctx.send("Usage : !weekly <NOM_CHALLENGE> <LIEN_CHALLENGE>")
+
+@add.error
+async def add_error(ctx, error):
+    if isinstance(error, MissingRequiredArgument):
+        await ctx.send("Usage : !add <UTILISATEUR_ROOT_ME>")
+
+@rm.error
+async def rm_error(ctx, error):
+    if isinstance(error, MissingRequiredArgument):
+        await ctx.send("Usage : !rm <UTILISATEUR_ROOT_ME>")
+
+@stats.error
+async def stats_error(ctx, error):
+    if isinstance(error, MissingRequiredArgument):
+        await ctx.send("Usage : !stats <UTILISATEUR_ROOT_ME>")
+
+@chall.error
+async def chall_error(ctx, error):
+    if isinstance(error, MissingRequiredArgument):
+        await ctx.send("Usage : !chall <UTILISATEUR_ROOT_ME>")
 # Main
 if __name__ == "__main__":
     bot.run(sys.argv[1])
