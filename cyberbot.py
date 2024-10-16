@@ -163,7 +163,7 @@ async def club(ctx):
     nb_members = len(bot.user_data)
     msg += f"Il y a actuellement {nb_members} personne(s) dans le Club Cyber : \r"
     for user in bot.user_data:
-        msg += f"   - `{user}`.\r"
+        msg += f"- `{user}`.\r"
     await ctx.send(msg)
 
 @bot.command()
@@ -196,7 +196,7 @@ async def stats(ctx, username: str):
         stats = bot.user_data[username].get_stats()
         msg += f"Statistiques de `{username}` :\r"
         for key in stats:
-            msg += f"   - {key} : `{stats[key]}`.\r"
+            msg += f"- {key} : `{stats[key]}`.\r"
         await ctx.send(msg)
     else:
         await ctx.send(f"Aucune donnée pour `{username}`.")
@@ -208,7 +208,7 @@ async def chall(ctx, username: str):
         chall = bot.user_data[username].get_last_challenges()
         msg += f"Challenge(s) réalisé(s) par `{username}` :\r"
         for str in chall:
-            msg += (f"   - `{str}`.\r")
+            msg += (f"- `{str}`.\r")
         await ctx.send(msg)
     else:
         await ctx.send(f"Aucune donnée pour `{username}`.")
