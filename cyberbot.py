@@ -234,6 +234,8 @@ async def chall(ctx, username: str):
 async def weekly(ctx, challenge: str, chall_link: str):
     
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    channel = bot.get_channel(1296481389067370513)
         
     # Embed for adding
     embed = discord.Embed(
@@ -248,7 +250,7 @@ async def weekly(ctx, challenge: str, chall_link: str):
     embed.set_footer(text="Club Cyber Bot - Weekly Challenges")
     #embed.set_image(url="https://wiki.elvis.science/images/e/ee/RootMe.png")
         
-    await ctx.send(embed=embed)
+    await channel.send(embed=embed)
         
     # Wait for a week (604800 secondes)
     await asyncio.sleep(604800)
@@ -269,7 +271,7 @@ async def weekly(ctx, challenge: str, chall_link: str):
     embed.set_footer(text="Club Cyber Bot - Weekly Challenges")
     #embed.set_image(url="https://wiki.elvis.science/images/e/ee/RootMe.png")
         
-    await ctx.send(embed=embed)
+    await channel.send(embed=embed)
         
 # ====================== Errors handling ======================
 @weekly.error
