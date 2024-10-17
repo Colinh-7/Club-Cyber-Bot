@@ -38,10 +38,11 @@ def normalize_challenges(list):
     new = []
     for tmp in list:
         line = ""
-        for word in tmp:
-            line += word
-            line += " "
-        new.append(line)
+        if ('>' not in tmp and '<' not in tmp):
+            for word in tmp:
+                line += word
+                line += " "
+            new.append(line)
     return new
             
 # CSV parsing
@@ -159,11 +160,11 @@ class CyberBot(commands.Bot):
 
 bot = CyberBot()
 
-@bot.command()
+@bot.command(help="Dis bonjour !")
 async def bonjour(ctx):
     await ctx.send(f"Bonjour {ctx.author}!")
 
-@bot.command()
+@bot.command(help="Affiche les membres du club.")
 async def club(ctx):
     msg = ""
     nb_members = len(bot.user_data)
@@ -173,7 +174,7 @@ async def club(ctx):
     await ctx.send(msg)
 
 # ====================== Users management ======================
-@bot.command()
+@bot.command(has_role="Admin", help="Ajoute un membre au club.")
 @has_role(ROLE_ADMIN)
 async def add(ctx, username: str):
     with open('club.csv', 'a', newline='') as csvfile:
@@ -183,7 +184,7 @@ async def add(ctx, username: str):
     await bot.reload_rootme()
 
 
-@bot.command()
+@bot.command(has_role="Admin", help="Enlève un membre du club.")
 @has_role(ROLE_ADMIN)
 async def rm(ctx, username: str):
     users = csv_parsing('club.csv') # Get all users
@@ -198,12 +199,12 @@ async def rm(ctx, username: str):
     else:
         await ctx.send(f"L'utilisateur `{username}` n'existe pas dans le Club Cyber.")
 
-@bot.command()
+@bot.command(help="Refresh les données des membres du club.")
 async def reload(ctx) :
     await bot.reload_rootme()
 
 # ====================== Users info ======================
-@bot.command()
+@bot.command(help="Affiche les statistiques Root Me d'un membre.")
 async def stats(ctx, username: str):
     msg = ""
     if username is not None and username in bot.user_data:
@@ -215,7 +216,7 @@ async def stats(ctx, username: str):
     else:
         await ctx.send(f"Aucune donnée pour `{username}`.")
 
-@bot.command()
+@bot.command(help="Affiche les derniers challenges Root Me d'un membre.")
 async def chall(ctx, username: str):
     msg = ""
     if username is not None and username in bot.user_data:
@@ -228,7 +229,7 @@ async def chall(ctx, username: str):
         await ctx.send(f"Aucune donnée pour `{username}`.")
 
 # ====================== Weekly challenges ======================
-@bot.command()
+@bot.command(has_role="Admin", help="Ajoute un challenge à la semaine.")
 @has_role(ROLE_ADMIN)
 async def weekly(ctx, challenge: str, chall_link: str):
     
