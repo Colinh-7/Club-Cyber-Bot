@@ -1,5 +1,5 @@
 import sys, csv
-import discord
+import discord, time
 import asyncio
 from datetime import datetime
 from urllib.request import urlopen, HTTPError
@@ -105,10 +105,11 @@ class User:
             self.stats = get_user_stats(user_response)
             self.challenges = get_last_challenges(user_response)
             self.challenges = normalize_challenges(self.challenges)
+            print(f"{name}'s data: LOADED.")
         except HTTPError as e:
             self.stats = {}
             self.challenges = []
-            print(f"{e}")
+            print(f"{e} {name}.")
 
     def get_name(self):
         return self.name
@@ -141,11 +142,12 @@ class CyberBot(commands.Bot):
         
     @tasks.loop(minutes=10)
     async def reload_rootme(self):
+        print("Loading data...")
         self.user_data = {}
         user_names = csv_parsing('club.csv')
         for name in user_names:
             self.user_data[name] = User(name)
-            await asyncio.sleep(2) # Avoid HTTP Error 429
+            time.sleep(2) # Avoid HTTP Error 429
 
     @reload_rootme.before_loop
     async def before_reload(self):
@@ -196,6 +198,10 @@ async def rm(ctx, username: str):
     else:
         await ctx.send(f"L'utilisateur `{username}` n'existe pas dans le Club Cyber.")
 
+@bot.command()
+async def reload(ctx) :
+    await bot.reload_rootme()
+
 # ====================== Users info ======================
 @bot.command()
 async def stats(ctx, username: str):
@@ -239,7 +245,7 @@ async def weekly(ctx, challenge: str, chall_link: str):
     embed.add_field(name="Lien du défi", value=f"[Cliquez ici pour accéder au défi]({chall_link})", inline=False)
     embed.add_field(name="Date d'ajout", value=current_time, inline=False)
     embed.set_footer(text="Club Cyber Bot - Weekly Challenges")
-    embed.set_image(url="https://wiki.elvis.science/images/e/ee/RootMe.png")
+    #embed.set_image(url="https://wiki.elvis.science/images/e/ee/RootMe.png")
         
     await ctx.send(embed=embed)
         
@@ -260,7 +266,7 @@ async def weekly(ctx, challenge: str, chall_link: str):
     embed.add_field(name="Défi lancé le", value=current_time, inline=True)
     embed.add_field(name="Date actuelle", value=one_week_later, inline=True)
     embed.set_footer(text="Club Cyber Bot - Weekly Challenges")
-    embed.set_image(url="https://wiki.elvis.science/images/e/ee/RootMe.png")
+    #embed.set_image(url="https://wiki.elvis.science/images/e/ee/RootMe.png")
         
     await ctx.send(embed=embed)
         
