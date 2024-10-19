@@ -1,4 +1,4 @@
-import sys, csv
+import sys, csv, json, os
 import discord, time
 import asyncio
 from datetime import datetime
@@ -10,6 +10,9 @@ from bs4 import BeautifulSoup
 intents = discord.Intents.default()
 intents.message_content = True
 ROLE_ADMIN = "Admin"
+CHALLENGES_FILE = "data/challenges.json"
+LOGS_CHANNEL = 1296481389209714785
+WEEKLY_CHANNEL = 1296481389067370513
 
 # ==============
 # Root Me Scrapper
@@ -101,27 +104,58 @@ def get_last_challenges(userpage):
 class User:
     def __init__(self, name):
         self.name = name
-        try:
-            user_response = https_request(self.name)
-            self.stats = get_user_stats(user_response)
-            self.challenges = get_last_challenges(user_response)
-            self.challenges = normalize_challenges(self.challenges)
-            print(f"{name}'s data: LOADED.")
-        except HTTPError as e:
-            self.stats = {}
-            self.challenges = []
-            print(f"{e} {name}.")
+        self.stats = {}
+        self.challenges = []
+        
+        self.logs_channel = bot.get_channel(LOGS_CHANNEL)
 
-    def get_name(self):
+        asyncio.create_task(self.load_user_data())
+
+    async def load_user_data(self):
+        while True:
+            try:
+                user_response = https_request(self.name)
+                self.stats = get_user_stats(user_response)
+                self.challenges = get_last_challenges(user_response)
+                self.challenges = normalize_challenges(self.challenges)
+
+                embed = discord.Embed(
+                    title=f"Root Me LOGS",
+                    description=f"Chargement des données de **{self.name}** réussi.",
+                    color=discord.Color.green()
+                )
+                embed.set_footer(text="Club Cyber Bot - Logs")
+                await self.logs_channel.send(embed=embed)
+
+                break 
+
+            except HTTPError as e:
+                self.stats = {}
+                self.challenges = []
+
+                if self.logs_channel:
+                    embed = discord.Embed(
+                        title=f"Root Me LOGS",
+                        description=f"Erreur lors de la récupération des données pour l'utilisateur **{self.name}**.",
+                        color=discord.Color.red()
+                    )
+                    embed.add_field(name="Erreur", value=str(e), inline=False)
+                    embed.set_footer(text="Club Cyber Bot - Logs")
+
+                    await self.logs_channel.send(embed=embed)
+
+                await asyncio.sleep(2)
+
+    async def get_name(self):
         return self.name
 
-    def get_stats(self):
+    async def get_stats(self):
         return self.stats
-    
-    def get_last_challenges(self):
+
+    async def get_last_challenges(self):
         return self.challenges
-    
-    def __repr__(self):
+
+    async def __repr__(self):
         return f"{self.name} : {self.stats}, {self.challenges}"
 
 # ================
@@ -132,27 +166,49 @@ class CyberBot(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix="!", intents=intents)
         self.user_data = {}  # Simple dict for user storage
+        self.challenge_tasks = {}
 
     async def setup_hook(self):
         self.reload_rootme.start()
 
     async def on_ready(self):
+        # For Cyberbot TEST Server
         canal = self.get_channel(1295444773532074007)
         if canal is not None:
             await canal.send(f"Je suis en ligne !", delete_after=5)
         
     @tasks.loop(minutes=10)
     async def reload_rootme(self):
-        print("Loading data...")
         self.user_data = {}
-        user_names = csv_parsing('club.csv')
+        user_names = csv_parsing('data/club.csv')
         for name in user_names:
             self.user_data[name] = User(name)
-            time.sleep(2) # Avoid HTTP Error 429
+            await asyncio.sleep(2) # Avoid HTTP Error 429
 
     @reload_rootme.before_loop
     async def before_reload(self):
         await self.wait_until_ready()
+
+# ===============
+# JSON File
+# ===============
+
+def is_json_file_empty(file_path):
+    if (os.path.exists(file_path)):
+        if os.stat(file_path).st_size == 0:  # Fichier vide
+            return True
+    return False
+
+def load_challenges():
+    if (os.path.exists(CHALLENGES_FILE) and not is_json_file_empty(CHALLENGES_FILE)):
+        with open(CHALLENGES_FILE, "r") as f:
+            return json.load(f)
+    else:
+        return {"ongoing_challenges": [], "completed_challenges": []}
+
+def save_challenges(challenges):
+    with open(CHALLENGES_FILE, "w") as f:
+        json.dump(challenges, f, indent=4)
             
 # ================
 # Bot Commands
@@ -164,6 +220,8 @@ bot = CyberBot()
 async def bonjour(ctx):
     await ctx.send(f"Bonjour {ctx.author}!")
 
+# ====================== Club infos ======================
+
 @bot.command(help="Affiche les membres du club.")
 async def club(ctx):
     msg = ""
@@ -173,7 +231,30 @@ async def club(ctx):
         msg += f"- `{user}`.\r"
     await ctx.send(msg)
 
+@bot.command(help="Affiche tous les challenges terminés par le club.")
+async def history(ctx):
+    
+    challenges = load_challenges()
+    
+    completed_challenges = challenges.get("completed_challenges", [])
+
+    if not completed_challenges:
+        await ctx.send("Aucun défi n'a encore été terminé.")
+        return
+
+    embed = discord.Embed(
+        title="Weekly Challenges Terminés",
+        description="Voici la liste des challenges qui ont été effectués jusqu'à présent :",
+        color=discord.Color.blue()
+    )
+
+    for challenge in completed_challenges:
+        embed.add_field(name=challenge["challenge"], value=f"Lien : {challenge['link']}\nDate : {challenge['date_added']}", inline=False)
+
+    await ctx.send(embed=embed)
+
 # ====================== Users management ======================
+
 @bot.command(has_role="Admin", help="Ajoute un membre au club.")
 @has_role(ROLE_ADMIN)
 async def add(ctx, username: str):
@@ -204,11 +285,12 @@ async def reload(ctx) :
     await bot.reload_rootme()
 
 # ====================== Users info ======================
+
 @bot.command(help="Affiche les statistiques Root Me d'un membre.")
 async def stats(ctx, username: str):
     msg = ""
     if username is not None and username in bot.user_data:
-        stats = bot.user_data[username].get_stats()
+        stats = await bot.user_data[username].get_stats()
         msg += f"Statistiques de `{username}` :\r"
         for key in stats:
             msg += f"- {key} : `{stats[key]}`.\r"
@@ -220,7 +302,7 @@ async def stats(ctx, username: str):
 async def chall(ctx, username: str):
     msg = ""
     if username is not None and username in bot.user_data:
-        chall = bot.user_data[username].get_last_challenges()
+        chall = await bot.user_data[username].get_last_challenges()
         msg += f"Challenge(s) réalisé(s) par `{username}` :\r"
         for str in chall:
             msg += (f"- `{str}`.\r")
@@ -229,15 +311,78 @@ async def chall(ctx, username: str):
         await ctx.send(f"Aucune donnée pour `{username}`.")
 
 # ====================== Weekly challenges ======================
-@bot.command(has_role="Admin", help="Ajoute un challenge à la semaine.")
+
+async def weekly_challenge_wait(ctx, challenge, chall_link, current_time):
+    try:
+        await asyncio.sleep(30)
+        
+        one_week_later = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+        challenges = load_challenges()
+
+        # Remove challenge from ongoing chall
+        for ch in challenges["ongoing_challenges"]:
+            if ch["challenge"] == challenge and ch["link"] == chall_link:
+                challenges["ongoing_challenges"].remove(ch)
+                ch["date_completed"] = one_week_later
+                challenges["completed_challenges"].append(ch)
+                break
+        
+        save_challenges(challenges)
+            
+        embed = discord.Embed(
+            title="Weekly Challenge terminé !",
+            description=f"Une semaine s'est écoulée depuis le défi '{challenge}'",
+            color=discord.Color.red()
+        )
+            
+        embed.add_field(name="Défi", value=challenge, inline=True)
+        embed.add_field(name="Lien du défi", value=f"[Cliquez ici pour accéder au défi]({chall_link})", inline=False)
+        embed.add_field(name="Défi lancé le", value=current_time, inline=True)
+        embed.add_field(name="Date actuelle", value=one_week_later, inline=True)
+        embed.set_footer(text="Club Cyber Bot - Weekly Challenges")
+            
+        channel = bot.get_channel(WEEKLY_CHANNEL)
+        await channel.send(embed=embed)
+        #await ctx.send(embed=embed)
+
+    except asyncio.CancelledError:
+
+        embed = discord.Embed(
+            title="CHALLENGES LOGS",
+            description="Un défi a été interrompu prématurément.",
+            color=discord.Color.red()
+        )
+    
+        embed.add_field(name="Nom du Défi", value=challenge, inline=False)
+        embed.add_field(name="Lien du Défi", value=chall_link, inline=False)
+        embed.add_field(name="Statut", value="Interrompu", inline=True)
+
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        embed.add_field(name="Date d'Interruption", value=current_time, inline=True)
+
+        embed.set_footer(text="Club Cyber Bot - Logs")
+
+        channel = bot.get_channel(LOGS_CHANNEL)
+        await channel.send(embed=embed)
+        #await ctx.send(embed=embed)
+
+@bot.command(help="Ajoute un challenge à la semaine.")
 @has_role(ROLE_ADMIN)
 async def weekly(ctx, challenge: str, chall_link: str):
     
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    challenges = load_challenges() # from json
 
-    channel = bot.get_channel(1296481389067370513)
+    challenges["ongoing_challenges"].append({
+        "challenge": challenge,
+        "link": chall_link,
+        "date_added": current_time
+    })
+    
+    save_challenges(challenges)
         
-    # Embed for adding
     embed = discord.Embed(
         title="Weekly Challenge ajouté !",
         description=f"Un nouveau défi a été ajouté : **{challenge}**",
@@ -248,30 +393,62 @@ async def weekly(ctx, challenge: str, chall_link: str):
     embed.add_field(name="Lien du défi", value=f"[Cliquez ici pour accéder au défi]({chall_link})", inline=False)
     embed.add_field(name="Date d'ajout", value=current_time, inline=False)
     embed.set_footer(text="Club Cyber Bot - Weekly Challenges")
-    #embed.set_image(url="https://wiki.elvis.science/images/e/ee/RootMe.png")
-        
+    
+    channel = bot.get_channel(WEEKLY_CHANNEL)   
     await channel.send(embed=embed)
+    #await ctx.send(embed=embed)
+
+    task = asyncio.create_task(weekly_challenge_wait(ctx, challenge, chall_link, current_time))
+    bot.challenge_tasks[challenge] = task
         
-    # Wait for a week (604800 secondes)
-    await asyncio.sleep(604800)
-        
-    one_week_later = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
-    # Embed challenge end
+@bot.command(help="Arrête un challenge en cours.")
+@has_role(ROLE_ADMIN)
+async def stop(ctx, challenge: str):
+    
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    challenges = load_challenges()
+
+    # Check if some challenges are currently active
+    if "ongoing_challenges" not in challenges:
+        await ctx.send("Il n'y a aucun défi en cours.")
+        return
+
+    # Delete challenge from ongoing challenge
+    challenge_found = None
+    for ch in challenges["ongoing_challenges"]:
+        if ch["challenge"] == challenge:
+            challenge_found = ch
+            challenges["ongoing_challenges"].remove(ch)
+            break
+    
+    if not challenge_found:
+        await ctx.send(f"Le défi **{challenge}** n'a pas été trouvé dans les défis en cours.")
+        return
+
+    save_challenges(challenges)
+    
+    # Cancel the tasks
+    if challenge in bot.challenge_tasks:
+        bot.challenge_tasks[challenge].cancel()
+        del bot.challenge_tasks[challenge]
+    
+    channel = bot.get_channel(WEEKLY_CHANNEL)
+    
     embed = discord.Embed(
-        title="Weekly Challenge terminé !",
-        description=f"Une semaine s'est écoulée depuis le défi '{challenge}'",
-        color=discord.Color.red()
+        title="Challenge annulé !",
+        description=f"Le challenge **{challenge}** a été arrêté manuellement.",
+        color=discord.Color.orange()
     )
-        
+    
     embed.add_field(name="Défi", value=challenge, inline=True)
-    embed.add_field(name="Lien du défi", value=f"[Cliquez ici pour accéder au défi]({chall_link})", inline=False)
-    embed.add_field(name="Défi lancé le", value=current_time, inline=True)
-    embed.add_field(name="Date actuelle", value=one_week_later, inline=True)
+    embed.add_field(name="Date d'arrêt", value=current_time, inline=True)
     embed.set_footer(text="Club Cyber Bot - Weekly Challenges")
-    #embed.set_image(url="https://wiki.elvis.science/images/e/ee/RootMe.png")
-        
+    
     await channel.send(embed=embed)
+
+    # For admins
+    await ctx.send(f"Le défi **{challenge}** a été arrêté avec succès.")
         
 # ====================== Errors handling ======================
 @weekly.error
@@ -299,7 +476,19 @@ async def chall_error(ctx, error):
     if isinstance(error, MissingRequiredArgument):
         await ctx.send("Usage : !chall <UTILISATEUR_ROOT_ME>")
 
+@stop.error
+async def chall_error(ctx, error):
+    if isinstance(error, MissingRequiredArgument):
+        await ctx.send("Usage : !stop <NOM_CHALLENGE>")
+
 
 # Main
 if __name__ == "__main__":
-    bot.run(sys.argv[1])
+    try:
+        bot.run(sys.argv[1])
+    except IndexError:
+        print(f"Error : missing API Key or Token. Try \"{sys.argv[0]} <KEY/TOKEN>\"")
+        sys.exit(1) 
+    except Exception as e:
+        print(f"Erreur inattendue : {e}")
+        sys.exit(1)
