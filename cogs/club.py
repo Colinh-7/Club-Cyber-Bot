@@ -1,7 +1,7 @@
 import csv, discord
 from discord.ext import commands
 from discord.ext.commands import MissingRequiredArgument
-from includes import rootme_scrapper as scrapper
+from includes import rootme_scrapper as rootme
 from includes import club_json
 
 ROLE_ADMIN = "Admin"
@@ -22,7 +22,7 @@ class ClubCommands(commands.Cog):
     @commands.command(help="Ajoute un membre au club.")
     @commands.has_role(ROLE_ADMIN)
     async def add(self, ctx, username: str):
-        if (scrapper.check_is_user_exists(username)):
+        if (rootme.check_if_user_exists(username)):
             with open('data/club.csv', 'a', newline='') as csvfile:
                 csvwriter = csv.writer(csvfile, delimiter=';')
                 csvwriter.writerow([username])
@@ -34,7 +34,7 @@ class ClubCommands(commands.Cog):
     @commands.command(help="Enlève un membre du club.")
     @commands.has_role(ROLE_ADMIN)
     async def rm(self, ctx, username: str):
-        users = scrapper.csv_parsing('data/club.csv')
+        users = rootme.csv_parsing('data/club.csv')
         if username in users:
             users.remove(username)
             with open('data/club.csv', 'w', newline='') as csvfile:
@@ -50,7 +50,7 @@ class ClubCommands(commands.Cog):
     async def history(self, ctx):
         challenges = club_json.load_challenges()
         
-        completed_challenges = challenges.get("completed_challenges", [])
+        completed_challenges = challenges["completed_challenges"]
 
         if not completed_challenges:
             await ctx.send("Aucun défi n'a encore été terminé.")
@@ -63,7 +63,9 @@ class ClubCommands(commands.Cog):
         )
 
         for challenge in completed_challenges:
-            embed.add_field(name=challenge["challenge"], value=f"Lien : {challenge['link']}\nDate : {challenge['date_added']}", inline=False)
+            embed.add_field(name=challenge, value=f"- Lien : {completed_challenges[challenge]["link"]}\n- Date : {completed_challenges[challenge]["date_added"]}", inline=False)
+        
+        embed.set_footer(text="Club Cyber Bot", icon_url="https://eijv.u-picardie.fr/wp-content/uploads/sites/14/2023/07/cropped-Logo-EIJV-32x32.jpg")
 
         await ctx.send(embed=embed)
     

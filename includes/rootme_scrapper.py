@@ -1,49 +1,9 @@
-from bs4 import BeautifulSoup 
-from urllib.request import urlopen, HTTPError
+import requests
 import csv
+from urllib.error import HTTPError
 
-def check_is_user_exists(username):
-    url = f"https://www.root-me.org/{username}"
-    try:
-        response = urlopen(url)
-        if response.status == 200:
-            return True
-        else:
-            return False
-    except HTTPError as e:
-        return False
+ROOTME_URL = "https://api.www.root-me.org/"
 
-def split_words(list):
-    # Month of the year in french
-    month = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", 
-            "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
-
-    new = []
-    for temp in list:
-        done = False
-        for m in month:
-            if m in temp:
-                part= temp.split(m)
-                new.append(part[0])
-                new.append(m)
-                done = True
-                break
-        if not done:
-            new.append(temp)
-    return new
-
-def normalize_challenges(list):
-    new = []
-    for tmp in list:
-        line = ""
-        if ('>' not in tmp and '<' not in tmp):
-            for word in tmp:
-                line += word
-                line += " "
-            new.append(line)
-    return new
-            
-# CSV parsing
 def csv_parsing(file):
     users = []
     with open(file, 'r', newline='') as csvfile:
@@ -51,43 +11,46 @@ def csv_parsing(file):
         for line in dict_read:
             users.append(line[0])
         return users
-        
-# Web response from the request
-def https_request(username):
+
+def check_if_user_exists(username):
     url = f"https://www.root-me.org/{username}"
-    page = urlopen(url)
-    return BeautifulSoup(page.read().decode("utf-8"), 'html.parser')
 
-# Get user's profile stats
-def get_user_stats(userpage):
-    stats = {}
-    row = userpage.find_all("div", {"class": "small-6 medium-3 columns text-center"})
-    for line in row:
-        array = line.get_text().split()
-        stats[array[1]] = array[0]
-    return stats
+    response = requests.get(url, headers={"User-agent" : "Club Cyber EIJV"})
+    if response.status_code == 200:
+        return True
+    else:
+        return False
 
-# Get user's last challenges
-def get_last_challenges(userpage):
-    challenges = []
-    find = False
-    challenge_section = None
+async def get_auteur_info(username, api_key):
+    cookies = {"api_key" : api_key }
 
-    sections = userpage.find_all("div", class_= "t-body tb-padding")
-    for section in sections:
-        activity = section.find_all("h3")
-        for a in activity:
-            if a.get_text().find("Activité") > -1:
-                find = True
-                break
-        if find :
-            challenge_section = section
-            break
+    # Get auteur id and name
+    resp = requests.get(f"{ROOTME_URL}/auteurs?nom={username}", cookies=cookies, headers={"User-agent" : "Club Cyber EIJV"})
+    if resp.status_code != 200 :
+        raise HTTPError(url="", msg="Error", code=resp.status_code, fp=None, hdrs="")
     
-    if challenge_section != None :
-        challenge_section = challenge_section.find_all("li")
+    data = resp.json()
+    id_auteur = data[0]["0"]["id_auteur"]
 
-        for line in challenge_section:
-            challenges.append(split_words(line.get_text().split()))
+    # Get all infos, challenges, etc    
+    resp = requests.get(f"{ROOTME_URL}/auteurs/{id_auteur}", cookies=cookies, headers={"User-agent" : "Club Cyber EIJV"})
+    if resp.status_code != 200 :
+        raise HTTPError(url="", msg="Error", code=resp.status_code, fp=None, hdrs="")
 
-    return challenges
+    return resp.json()
+        
+def get_challenge_info(challenge, api_key):
+    cookies = {"api_key" : api_key}
+
+    resp = requests.get(f"{ROOTME_URL}/challenges?titre={challenge}", cookies=cookies, headers={"User-agent" : "Club Cyber EIJV"})
+    if resp.status_code != 200 :
+        raise HTTPError(url="", msg="Error", code=resp.status_code, fp=None, hdrs="")
+    
+    data = resp.json()
+    id_challenge = data[0]["0"]["id_challenge"]
+
+    resp = requests.get(f"{ROOTME_URL}/challenges/{id_challenge}", cookies=cookies, headers={"User-agent" : "Club Cyber EIJV"})
+    if resp.status_code != 200 :
+        raise HTTPError(url="", msg="Error", code=resp.status_code, fp=None, hdrs="")
+
+    return resp.json()

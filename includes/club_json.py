@@ -13,7 +13,7 @@ def load_challenges():
         with open(CHALLENGES_FILE, "r") as f:
             return json.load(f)
     else:
-        return {"ongoing_challenges": [], "completed_challenges": []}
+        return {"ongoing_challenges": {}, "completed_challenges": {}}
 
 def save_challenges(challenges):
     with open(CHALLENGES_FILE, "w") as f:

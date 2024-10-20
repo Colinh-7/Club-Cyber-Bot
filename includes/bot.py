@@ -1,18 +1,18 @@
 from discord.ext import commands, tasks
 import asyncio, discord
-from includes import rootme_scrapper as scrapper
+from includes import rootme_scrapper as rootme
 from includes.user import User
 
 intents = discord.Intents.default()
 intents.message_content = True
 
 class CyberBot(commands.Bot):
-    load_lock = asyncio.Lock() # Mutex
 
-    def __init__(self):
+    def __init__(self, rootme_token):
         super().__init__(command_prefix="!", intents=intents)
         self.user_data = {}  # Simple dict for user storage
         self.challenge_tasks = {} # Tasks for the weeklys
+        self.rootme_token = rootme_token
 
     async def setup_hook(self):
         await self.load_extension("cogs.club")
@@ -28,12 +28,10 @@ class CyberBot(commands.Bot):
         
     @tasks.loop(minutes=10)
     async def reload_rootme(self):
-        async with CyberBot.load_lock:  # Mutex lock
-            self.user_data = {}
-            user_names = scrapper.csv_parsing('data/club.csv')
-            for name in user_names:
-                self.user_data[name] = User(name, self)
-                await asyncio.sleep(2)  # Avoid HTTP Error 429
+        self.user_data = {}
+        user_names = rootme.csv_parsing('data/club.csv')
+        for name in user_names:
+            self.user_data[name] = User(name, self)
 
     @reload_rootme.before_loop
     async def before_reload(self):
