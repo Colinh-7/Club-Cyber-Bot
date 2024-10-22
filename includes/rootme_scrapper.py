@@ -1,10 +1,10 @@
-import requests
+import aiohttp
 import csv
 from urllib.error import HTTPError
 
 ROOTME_URL = "https://api.www.root-me.org/"
 
-def csv_parsing(file):
+async def csv_parsing(file):
     users = []
     with open(file, 'r', newline='') as csvfile:
         dict_read = csv.reader(csvfile, delimiter=';')
@@ -12,45 +12,48 @@ def csv_parsing(file):
             users.append(line[0])
         return users
 
-def check_if_user_exists(username):
+async def check_if_user_exists(username):
     url = f"https://www.root-me.org/{username}"
 
-    response = requests.get(url, headers={"User-agent" : "Club Cyber EIJV"})
-    if response.status_code == 200:
-        return True
-    else:
-        return False
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers={"User-agent": "Club Cyber EIJV"}) as response:
+            if response.status == 200:
+                return True
+            else:
+                return False
 
 async def get_auteur_info(username, api_key):
-    cookies = {"api_key" : api_key }
+    cookies = {"api_key": api_key}
 
-    # Get auteur id and name
-    resp = requests.get(f"{ROOTME_URL}/auteurs?nom={username}", cookies=cookies, headers={"User-agent" : "Club Cyber EIJV"})
-    if resp.status_code != 200 :
-        raise HTTPError(url="", msg="Error", code=resp.status_code, fp=None, hdrs="")
-    
-    data = resp.json()
-    id_auteur = data[0]["0"]["id_auteur"]
+    async with aiohttp.ClientSession() as session:
+        # Get auteur id and name
+        async with session.get(f"{ROOTME_URL}/auteurs?nom={username}", cookies=cookies, headers={"User-agent": "Club Cyber EIJV"}) as resp:
+            if resp.status != 200:
+                raise HTTPError(url="", msg="Error", code=resp.status, fp=None, hdrs="")
+            
+            data = await resp.json()
+            id_auteur = data[0]["0"]["id_auteur"]
 
-    # Get all infos, challenges, etc    
-    resp = requests.get(f"{ROOTME_URL}/auteurs/{id_auteur}", cookies=cookies, headers={"User-agent" : "Club Cyber EIJV"})
-    if resp.status_code != 200 :
-        raise HTTPError(url="", msg="Error", code=resp.status_code, fp=None, hdrs="")
+        # Get all infos, challenges, etc    
+        async with session.get(f"{ROOTME_URL}/auteurs/{id_auteur}", cookies=cookies, headers={"User-agent": "Club Cyber EIJV"}) as resp:
+            if resp.status != 200:
+                raise HTTPError(url="", msg="Error", code=resp.status, fp=None, hdrs="")
 
-    return resp.json()
-        
-def get_challenge_info(challenge, api_key):
-    cookies = {"api_key" : api_key}
+            return await resp.json()
 
-    resp = requests.get(f"{ROOTME_URL}/challenges?titre={challenge}", cookies=cookies, headers={"User-agent" : "Club Cyber EIJV"})
-    if resp.status_code != 200 :
-        raise HTTPError(url="", msg="Error", code=resp.status_code, fp=None, hdrs="")
-    
-    data = resp.json()
-    id_challenge = data[0]["0"]["id_challenge"]
+async def get_challenge_info(challenge, api_key):
+    cookies = {"api_key": api_key}
 
-    resp = requests.get(f"{ROOTME_URL}/challenges/{id_challenge}", cookies=cookies, headers={"User-agent" : "Club Cyber EIJV"})
-    if resp.status_code != 200 :
-        raise HTTPError(url="", msg="Error", code=resp.status_code, fp=None, hdrs="")
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f"{ROOTME_URL}/challenges?titre={challenge}", cookies=cookies, headers={"User-agent": "Club Cyber EIJV"}) as resp:
+            if resp.status != 200:
+                raise HTTPError(url="", msg="Error", code=resp.status, fp=None, hdrs="")
+            
+            data = await resp.json()
+            id_challenge = data[0]["0"]["id_challenge"]
 
-    return resp.json()
+        async with session.get(f"{ROOTME_URL}/challenges/{id_challenge}", cookies=cookies, headers={"User-agent": "Club Cyber EIJV"}) as resp:
+            if resp.status != 200:
+                raise HTTPError(url="", msg="Error", code=resp.status, fp=None, hdrs="")
+
+            return await resp.json()

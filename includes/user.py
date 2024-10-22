@@ -3,6 +3,7 @@ import asyncio, discord
 from urllib.request import HTTPError
 
 LOGS_CHANNEL = 1296481389209714785
+semaphore = asyncio.Semaphore(1)
 
 class User:
     def __init__(self, name, bot):
@@ -19,7 +20,8 @@ class User:
         
         while attempt < 5:
             try:
-                user_info = await rootme.get_auteur_info(self.name, self.bot.rootme_token)
+                async with semaphore :
+                    user_info = await rootme.get_auteur_info(self.name, self.bot.rootme_token)
                 self.challenges = user_info.pop("validations")
                 self.data = user_info
                 embed = discord.Embed(
@@ -30,6 +32,7 @@ class User:
                 embed.set_thumbnail(url=f"https://www.root-me.org/{self.data["logo_url"]}")
                 embed.set_footer(text="Club Cyber Bot - Logs", icon_url="https://eijv.u-picardie.fr/wp-content/uploads/sites/14/2023/07/cropped-Logo-EIJV-32x32.jpg")
 
+                print(f"{self.name}'s data : LOADED.")
                 await self.logs_channel.send(embed=embed, delete_after=30)
 
                 break 
@@ -46,7 +49,7 @@ class User:
                     embed.add_field(name="Erreur", value=str(e), inline=False)
                     embed.set_footer(text="Club Cyber Bot - Logs", icon_url="https://eijv.u-picardie.fr/wp-content/uploads/sites/14/2023/07/cropped-Logo-EIJV-32x32.jpg")
 
-
+                    print(f"{self.name}'s data : {e}.")
                     await self.logs_channel.send(embed=embed, delete_after=30)
                 attempt += 1
 

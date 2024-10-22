@@ -22,7 +22,7 @@ class ClubCommands(commands.Cog):
     @commands.command(help="Ajoute un membre au club.")
     @commands.has_role(ROLE_ADMIN)
     async def add(self, ctx, username: str):
-        if (rootme.check_if_user_exists(username)):
+        if (await rootme.check_if_user_exists(username)):
             with open('data/club.csv', 'a', newline='') as csvfile:
                 csvwriter = csv.writer(csvfile, delimiter=';')
                 csvwriter.writerow([username])
@@ -34,7 +34,7 @@ class ClubCommands(commands.Cog):
     @commands.command(help="Enlève un membre du club.")
     @commands.has_role(ROLE_ADMIN)
     async def rm(self, ctx, username: str):
-        users = rootme.csv_parsing('data/club.csv')
+        users = await rootme.csv_parsing('data/club.csv')
         if username in users:
             users.remove(username)
             with open('data/club.csv', 'w', newline='') as csvfile:
@@ -48,7 +48,7 @@ class ClubCommands(commands.Cog):
         
     @commands.command(help="Affiche tous les challenges terminés par le club.")
     async def history(self, ctx):
-        challenges = club_json.load_challenges()
+        challenges = await club_json.load_challenges()
         
         completed_challenges = challenges["completed_challenges"]
 

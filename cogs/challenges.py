@@ -22,7 +22,7 @@ class ChallengesCommands(commands.Cog):
             
             one_week_later = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-            challenges = club_json.load_challenges()
+            challenges = await club_json.load_challenges()
 
             # Remove challenge from ongoing chall
             if ch_info["titre"] in challenges["ongoing_challenges"]:
@@ -30,7 +30,7 @@ class ChallengesCommands(commands.Cog):
                 ch["date_completed"] = one_week_later
                 challenges["completed_challenges"][ch_info["titre"]] = ch
             
-                club_json.save_challenges(challenges)
+                await club_json.save_challenges(challenges)
                 
             embed = discord.Embed(
                 title=f"**Weekly Challenge terminé : {ch_info["titre"]}**",
@@ -74,21 +74,21 @@ class ChallengesCommands(commands.Cog):
     async def weekly(self, ctx, challenge: str):
         
         try :
-            ch_info = rootme.get_challenge_info(challenge, self.bot.rootme_token)[0]
+            ch_info = await rootme.get_challenge_info(challenge, self.bot.rootme_token)[0]
         except HTTPError as e:
             await ctx.send(f"Il semblerait que le challenge **{challenge}** n'existe pas.")
             return
 
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-        challenges = club_json.load_challenges() # from json
+        challenges = await club_json.load_challenges() # from json
         
         challenges["ongoing_challenges"][challenge] = ({
             "link": f"https://www.root-me.org/{ch_info["url_challenge"]}",
             "date_added": current_time
         })
         
-        club_json.save_challenges(challenges)
+        await club_json.save_challenges(challenges)
             
         embed = discord.Embed(
             title=f"**Weekly Challenge ajouté : {ch_info['titre']}**",
@@ -117,7 +117,7 @@ class ChallengesCommands(commands.Cog):
         
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        challenges = club_json.load_challenges()
+        challenges = await club_json.load_challenges()
 
         # Check if some challenges are currently active
         if "ongoing_challenges" not in challenges:
@@ -131,7 +131,7 @@ class ChallengesCommands(commands.Cog):
             await ctx.send(f"Le défi **{challenge}** n'a pas été trouvé dans les défis en cours.")
             return
 
-        club_json.save_challenges(challenges)
+        await club_json.save_challenges(challenges)
         
         # Cancel the tasks
         if challenge in self.bot.challenge_tasks:
@@ -158,7 +158,7 @@ class ChallengesCommands(commands.Cog):
 
     @commands.command(help="Valide un challenge.")
     async def done(self, ctx, chall: str):
-        challenges = club_json.load_challenges()
+        challenges = await club_json.load_challenges()
 
         if chall in challenges["ongoing_challenges"]:
             current_chall = challenges["ongoing_challenges"][chall]
@@ -169,7 +169,7 @@ class ChallengesCommands(commands.Cog):
 
             if ctx.author.name not in current_chall["completed_by"]:
                 current_chall["completed_by"][ctx.author.name] = {"completed_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-                club_json.save_challenges(challenges)
+                await club_json.save_challenges(challenges)
                 await ctx.send(f"{ctx.author.mention} a validé le challenge **{chall}** !\nBien joué !")
             else:
                 await ctx.send("Tu as déjà validé ce challenge.")

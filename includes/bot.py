@@ -18,14 +18,13 @@ class CyberBot(commands.Bot):
         await self.load_extension("cogs.club")
         await self.load_extension("cogs.challenges")
         await self.load_extension("cogs.user_info")
-        await self.reload_rootme()
 
     async def on_ready(self):
         await self.reload_rootme()
 
     async def reload_rootme(self):
         self.user_data = {}
-        user_names = rootme.csv_parsing('data/club.csv')
+        user_names = await rootme.csv_parsing('data/club.csv')
 
         for name in user_names:
             self.user_data[name] = User(name, self)
