@@ -68,6 +68,27 @@ class ClubCommands(commands.Cog):
         embed.set_footer(text="Club Cyber Bot", icon_url="https://eijv.u-picardie.fr/wp-content/uploads/sites/14/2023/07/cropped-Logo-EIJV-32x32.jpg")
 
         await ctx.send(embed=embed)
+
+
+    @commands.command(help="Affiche le classsement du club.")
+    async def leaderboard(self, ctx):
+        
+        sorted_users = sorted(self.bot.user_data.values(), key=lambda user: int(user.data["score"]), reverse=True)
+        embed = discord.Embed(title="🏆 Classement du Club : ", 
+                              color=discord.Color.magenta())
+
+        user_names = '\n'.join(user.name for user in sorted_users)
+        scores = '\n'.join(str(user.data["score"]) for user in sorted_users)
+        challenges = '\n'.join(str(len(user.challenges)) for user in sorted_users)
+        
+        embed.add_field(name="", value="Voici le classement actuel du club :", inline=False)
+        embed.add_field(name='Pseudo', value=user_names or 'Aucun', inline=True)
+        embed.add_field(name='Score', value=scores or 'Pas de score', inline=True)
+        embed.add_field(name='Challenges', value=challenges or 'Aucun challenge', inline=True)
+
+        embed.set_thumbnail(url=f"https://shop.root-me.org/cdn/shop/files/image.png")
+        embed.set_footer(text="Club Cyber Bot", icon_url="https://eijv.u-picardie.fr/wp-content/uploads/sites/14/2023/07/cropped-Logo-EIJV-32x32.jpg")
+        await ctx.send(embed=embed)
     
     @add.error
     async def add_error(ctx, error):

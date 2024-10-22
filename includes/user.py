@@ -49,7 +49,6 @@ class User:
 
                     await self.logs_channel.send(embed=embed, delete_after=30)
                 attempt += 1
-                await asyncio.sleep(2)
 
     async def get_name(self):
         return self.name
