@@ -3,6 +3,7 @@ import asyncio, discord
 from urllib.request import HTTPError
 
 LOGS_CHANNEL = 1296481389209714785
+DELETE_TIME = 600
 semaphore = asyncio.Semaphore(1)
 
 class User:
@@ -32,14 +33,14 @@ class User:
                 embed.set_thumbnail(url=f"https://www.root-me.org/{self.data["logo_url"]}")
                 embed.set_footer(text="Club Cyber Bot - Logs", icon_url="https://eijv.u-picardie.fr/wp-content/uploads/sites/14/2023/07/cropped-Logo-EIJV-32x32.jpg")
 
-                print(f"{self.name}'s data : LOADED.")
-                await self.logs_channel.send(embed=embed, delete_after=30)
+                #print(f"{self.name}'s data : LOADED.")
+                await self.logs_channel.send(embed=embed, delete_after=DELETE_TIME)
 
                 break 
 
             except HTTPError as e:
                 self.challenges = {}
-                self.data = {}
+                self.data = {"score":-1}
                 if self.logs_channel:
                     embed = discord.Embed(
                         title=f"Root Me LOGS",
@@ -49,10 +50,9 @@ class User:
                     embed.add_field(name="Erreur", value=str(e), inline=False)
                     embed.set_footer(text="Club Cyber Bot - Logs", icon_url="https://eijv.u-picardie.fr/wp-content/uploads/sites/14/2023/07/cropped-Logo-EIJV-32x32.jpg")
 
-                    print(f"{self.name}'s data : {e}.")
-                    await self.logs_channel.send(embed=embed, delete_after=30)
+                    #print(f"{self.name}'s data : {e}.")
+                    await self.logs_channel.send(embed=embed, delete_after=DELETE_TIME)
                 attempt += 1
-
     async def get_name(self):
         return self.name
 

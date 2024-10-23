@@ -20,19 +20,14 @@ class CyberBot(commands.Bot):
         await self.load_extension("cogs.user_info")
 
     async def on_ready(self):
-        await self.reload_rootme()
+        await self.reload_rootme.start() # Start the tasks loop
 
+    @tasks.loop(minutes=10)
     async def reload_rootme(self):
         self.user_data = {}
         user_names = await rootme.csv_parsing('data/club.csv')
-
         for name in user_names:
-            self.user_data[name] = User(name, self)
-
-    @tasks.loop(minutes=10)
-    async def periodic_reload_rootme(self):
-        await self.reload_rootme()
-
-    @periodic_reload_rootme.before_loop
-    async def before_reload(self):
-        await self.wait_until_ready()
+            try:
+                self.user_data[name] = User(name, self)
+            except Exception as e:
+                print(f"{name} removed.")

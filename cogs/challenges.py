@@ -18,7 +18,7 @@ class ChallengesCommands(commands.Cog):
     
     async def weekly_challenge_wait(self, ctx, ch_info, current_time):
         try:
-            await asyncio.sleep(60) #604800
+            await asyncio.sleep(604800) #604800
             
             one_week_later = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
