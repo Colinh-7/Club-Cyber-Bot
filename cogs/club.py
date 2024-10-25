@@ -29,7 +29,7 @@ class ClubCommands(commands.Cog):
             await ctx.send(f"L'utilisateur `{username}` a été ajouté au Club Cyber.")
             await self.bot.reload_rootme()
         else:
-            await ctx.send(f"L'utilisateur `{username}` ne semble pas existé.")
+            await ctx.send(f"L'utilisateur `{username}` ne semble pas exister.")
 
     @commands.command(help="Enlève un membre du club.")
     @commands.has_role(ROLE_ADMIN)
