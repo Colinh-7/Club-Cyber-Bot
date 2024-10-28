@@ -22,7 +22,9 @@ class ClubCommands(commands.Cog):
     @commands.command(help="Ajoute un membre au club.")
     @commands.has_role(ROLE_ADMIN)
     async def add(self, ctx, username: str):
-        if (await rootme.check_if_user_exists(username)):
+        if username in self.bot.user_data:
+            await ctx.send(f"`{username}` fait déjà partie du club.")
+        elif (await rootme.check_if_user_exists(username)):
             with open('data/club.csv', 'a', newline='') as csvfile:
                 csvwriter = csv.writer(csvfile, delimiter=';')
                 csvwriter.writerow([username])
