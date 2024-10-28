@@ -27,7 +27,7 @@ A Discord bot designed to interact with the [Root Me](https://api.www.root-me.or
 ### User Commands
 
 - `!stats [username]`: Fetches and displays Root Me user statistics including rank, score, and completed challenges.
-- `!leaderboard`: Displays the current leaderboard of members based on Root Me statistics (WIP).
+- `!leaderboard`: Displays the current leaderboard of members based on Root Me statistics.
 
 ## Example of a Challenge Announcement
 
