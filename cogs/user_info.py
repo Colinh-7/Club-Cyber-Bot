@@ -32,14 +32,15 @@ class UserCommands(commands.Cog):
 
     @commands.command(help="Affiche les derniers challenges Root Me d'un membre.")
     async def chall(self, ctx, username: str):
-        if username in self.bot.user_data:
-            msg = f"Derniers challenges de **{username}** : \n"
-            chall = await self.bot.user_data[username].get_last_challenges()
-            for i in range(10):
-                msg += f"* {chall[i]["titre"]}. ({chall[i]["date"]})\n"
-            await ctx.send(msg)
-        else:
-            await ctx.send(f"Aucune donnée pour `{username}`.")
+        for id in self.bot.user_data:
+            if username == await self.bot.user_data[id].get_name():
+                msg = f"Derniers challenges de **{username}** : \n"
+                chall = await self.bot.user_data[id].get_last_challenges()
+                for i in range(10):
+                    msg += f"* {chall[i]["titre"]}. ({chall[i]["date"]})\n"
+                await ctx.send(msg)
+                return
+        await ctx.send(f"Aucune donnée pour `{username}`.")
 
     @commands.command(help="Refresh les données des membres du club.")
     async def reload(self, ctx) :
