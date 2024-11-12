@@ -9,7 +9,7 @@ async def is_json_file_empty(file_path):
     return False
 
 async def load_challenges():
-    if (os.path.exists(CHALLENGES_FILE) and not is_json_file_empty(CHALLENGES_FILE)):
+    if (os.path.exists(CHALLENGES_FILE) and not await is_json_file_empty(CHALLENGES_FILE)):
         with open(CHALLENGES_FILE, "r") as f:
             return json.load(f)
     else:
