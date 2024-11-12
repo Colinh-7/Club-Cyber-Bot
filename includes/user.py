@@ -7,8 +7,8 @@ DELETE_TIME = 600
 semaphore = asyncio.Semaphore(1)
 
 class User:
-    def __init__(self, name, bot):
-        self.name = name
+    def __init__(self, id, bot):
+        self.id = id
         self.data = {}
         self.challenges = []
         self.bot = bot
@@ -22,9 +22,10 @@ class User:
         while attempt < 5:
             try:
                 async with semaphore :
-                    user_info = await rootme.get_auteur_info(self.name, self.bot.rootme_token)
+                    user_info = await rootme.get_auteur_info(self.id, self.bot.rootme_token)
                 self.challenges = user_info.pop("validations")
                 self.data = user_info
+                self.name = user_info["nom"]
                 embed = discord.Embed(
                     title=f"Root Me LOGS",
                     description=f"Chargement des données de **{self.name}** réussi.",
@@ -41,10 +42,11 @@ class User:
             except HTTPError as e:
                 self.challenges = {}
                 self.data = {"score":-1}
+                self.name = "None"
                 if self.logs_channel:
                     embed = discord.Embed(
                         title=f"Root Me LOGS",
-                        description=f"Erreur lors de la récupération des données pour l'utilisateur **{self.name}**.",
+                        description=f"Erreur lors de la récupération des données pour l'utilisateur **{self.id}**.",
                         color=discord.Color.red()
                     )
                     embed.add_field(name="Erreur", value=str(e), inline=False)

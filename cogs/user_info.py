@@ -8,28 +8,27 @@ class UserCommands(commands.Cog):
 
     @commands.command(help="Affiche les statistiques Root Me d'un membre.")
     async def stats(self, ctx, username: str):
-        msg = ""
-        if  username in self.bot.user_data:
-            stats = await self.bot.user_data[username].get_data()
-            embed = discord.Embed(
-                title=f"**{stats['nom']}**", 
-                description=f"Statistiques de {stats['nom']}",
-                color=discord.Color.blue()
-            )
+        for id in self.bot.user_data:
+            if username == await self.bot.user_data[id].get_name() :
+                stats = await self.bot.user_data[id].get_data()
+                embed = discord.Embed(
+                    title=f"**{stats['nom']}**", 
+                    description=f"Statistiques de {stats['nom']}",
+                    color=discord.Color.blue()
+                )
 
-            embed.add_field(name="ID Auteur", value=stats["id_auteur"], inline=False)
-            embed.add_field(name="Position", value=stats["position"] if stats["position"] != "" else "Non classé", inline=True)
-            embed.add_field(name="Score", value=stats["score"], inline=True)
-            embed.add_field(name="Challenges", value=len(self.bot.user_data[username].challenges), inline=True)
-            embed.add_field(name="Compromissions", value=len(stats["solutions"]), inline=True)
-            embed.add_field(name="Membre", value="Oui" if stats["membre"] == "true" else "Non", inline=True)
-            embed.add_field(name="Statut", value="Premium" if "pre" in stats["statut"] else "Gratuit", inline=True)
-            embed.set_thumbnail(url=f"https://www.root-me.org/{stats['logo_url']}")
-            embed.set_footer(text="Club Cyber Bot", icon_url="https://eijv.u-picardie.fr/wp-content/uploads/sites/14/2023/07/cropped-Logo-EIJV-32x32.jpg")
-            await ctx.send(embed=embed)
-
-        else:
-            await ctx.send(f"Aucune donnée pour `{username}`.")
+                embed.add_field(name="ID Auteur", value=stats["id_auteur"], inline=False)
+                embed.add_field(name="Position", value=stats["position"] if stats["position"] != "" else "Non classé", inline=True)
+                embed.add_field(name="Score", value=stats["score"], inline=True)
+                embed.add_field(name="Challenges", value=len(self.bot.user_data[id].challenges), inline=True)
+                embed.add_field(name="Compromissions", value=len(stats["solutions"]), inline=True)
+                embed.add_field(name="Membre", value="Oui" if stats["membre"] == "true" else "Non", inline=True)
+                embed.add_field(name="Statut", value="Premium" if "pre" in stats["statut"] else "Gratuit", inline=True)
+                embed.set_thumbnail(url=f"https://www.root-me.org/{stats['logo_url']}")
+                embed.set_footer(text="Club Cyber Bot", icon_url="https://eijv.u-picardie.fr/wp-content/uploads/sites/14/2023/07/cropped-Logo-EIJV-32x32.jpg")
+                await ctx.send(embed=embed)
+                return 
+        await ctx.send(f"Aucune donnée pour `{username}`.")
 
     @commands.command(help="Affiche les derniers challenges Root Me d'un membre.")
     async def chall(self, ctx, username: str):

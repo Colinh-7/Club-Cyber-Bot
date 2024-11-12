@@ -25,9 +25,9 @@ class CyberBot(commands.Bot):
     @tasks.loop(minutes=10)
     async def reload_rootme(self):
         self.user_data = {}
-        user_names = await rootme.csv_parsing('data/club.csv')
-        for name in user_names:
+        user_id = await rootme.csv_parsing('data/club.csv')
+        for id in user_id:
             try:
-                self.user_data[name] = User(name, self)
+                self.user_data[id] = User(id, self)
             except Exception as e:
-                print(f"{name} removed.")
+                print(f"{id} removed.")

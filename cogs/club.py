@@ -15,38 +15,38 @@ class ClubCommands(commands.Cog):
         msg = ""
         nb_members = len(self.bot.user_data)
         msg += f"Il y a actuellement {nb_members} personne(s) dans le Club Cyber :\r"
-        for user in self.bot.user_data:
-            msg += f"- `{user}`.\r"
+        for id in self.bot.user_data:
+            msg += f"- `{await self.bot.user_data[id].get_name()}`.\r"
         await ctx.send(msg)
 
     @commands.command(help="Ajoute un membre au club.")
     @commands.has_role(ROLE_ADMIN)
-    async def add(self, ctx, username: str):
-        if username in self.bot.user_data:
-            await ctx.send(f"`{username}` fait déjà partie du club.")
-        elif (await rootme.check_if_user_exists(username)):
+    async def add(self, ctx, id: str):
+        if id in self.bot.user_data:
+            await ctx.send(f"`{id}` fait déjà partie du club.")
+        elif (await rootme.check_if_user_exists(id, self.bot.rootme_token)):
             with open('data/club.csv', 'a', newline='') as csvfile:
                 csvwriter = csv.writer(csvfile, delimiter=';')
-                csvwriter.writerow([username])
-            await ctx.send(f"L'utilisateur `{username}` a été ajouté au Club Cyber.")
+                csvwriter.writerow([id])
+            await ctx.send(f"L'utilisateur `{id}` a été ajouté au Club Cyber.")
             await self.bot.reload_rootme()
         else:
-            await ctx.send(f"L'utilisateur `{username}` ne semble pas exister.")
+            await ctx.send(f"L'utilisateur `{id}` ne semble pas exister.")
 
     @commands.command(help="Enlève un membre du club.")
     @commands.has_role(ROLE_ADMIN)
-    async def rm(self, ctx, username: str):
+    async def rm(self, ctx, id: str):
         users = await rootme.csv_parsing('data/club.csv')
-        if username in users:
-            users.remove(username)
+        if id in users:
+            users.remove(id)
             with open('data/club.csv', 'w', newline='') as csvfile:
                 csvwriter = csv.writer(csvfile, delimiter=';')
                 for user in users:
                     csvwriter.writerow([user])
-            await ctx.send(f"L'utilisateur `{username}` a été enlevé du Club Cyber.")
+            await ctx.send(f"L'utilisateur `{id}` a été enlevé du Club Cyber.")
             await self.bot.reload_rootme()
         else:
-            await ctx.send(f"L'utilisateur `{username}` n'existe pas dans le Club Cyber.")
+            await ctx.send(f"L'utilisateur `{id}` n'existe pas dans le Club Cyber.")
         
     @commands.command(help="Affiche tous les challenges terminés par le club.")
     async def history(self, ctx):
