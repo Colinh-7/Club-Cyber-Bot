@@ -74,7 +74,8 @@ class ChallengesCommands(commands.Cog):
     async def weekly(self, ctx, challenge: str):
         
         try :
-            ch_info = await rootme.get_challenge_info(challenge, self.bot.rootme_token)[0]
+            res = await rootme.get_challenge_info(challenge, self.bot.rootme_token)
+            ch_info = res[0]
         except HTTPError as e:
             await ctx.send(f"Il semblerait que le challenge **{challenge}** n'existe pas.")
             return
