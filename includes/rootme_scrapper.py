@@ -12,12 +12,12 @@ async def csv_parsing(file):
             users.append(line[0])
         return users
 
-async def check_if_user_exists(username, api_key):
+async def check_if_user_exists(id, api_key):
     cookies = {"api_key": api_key}
 
     async with aiohttp.ClientSession() as session:
         # Get auteur id and name
-        async with session.get(f"{ROOTME_URL}/auteurs/{id_auteur}", cookies=cookies, headers={"User-agent": "Club Cyber EIJV"}) as resp:
+        async with session.get(f"{ROOTME_URL}/auteurs/{id}", cookies=cookies, headers={"User-agent": "Club Cyber EIJV"}) as resp:
             if resp.status != 200:
                 return False
             else :
